@@ -1,14 +1,17 @@
 from typing import *
 from abc import ABCMeta, abstractmethod
 from gym import Env, spaces
+from ray.rllib.env import MultiAgentEnv
+from ray.rllib.env.env_context import EnvContext
+from ray.rllib.evaluation.episode import Episode
 
 
-class EnvWrapper(Env, metaclass=ABCMeta):
+class EnvWrapper(MultiAgentEnv, metaclass=ABCMeta):
 	reward_range = (-float('inf'), float('inf'))
 	observation_space = None
 	action_space = None
 
-	def __init__(self, config_fn : Callable[[], Tuple[str, Dict]]):
+	def __init__(self, config : EnvContext):
 		""" EnvWrapper ctor
 		
 		Args:
@@ -17,7 +20,7 @@ class EnvWrapper(Env, metaclass=ABCMeta):
 		"""
 		super().__init__()
 
-		self.config_fn = config_fn
+		self.config_fn = config["fn"]
 
 		self.env = None
 		self.scenario_name = None
@@ -46,6 +49,14 @@ class EnvWrapper(Env, metaclass=ABCMeta):
 		""" Get dictionary with agent name key and  observation and action spaces value
 		"""
 		raise NotImplementedError()
+
+
+	@abstractmethod
+	def get_policy_mapping_fn(self) -> Callable[[str, Episode], str]:
+		"""Get policy mapping for multiagetn training
+		"""
+		raise NotImplementedError()
+
 
 
 	@abstractmethod
