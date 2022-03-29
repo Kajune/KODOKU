@@ -41,4 +41,5 @@ if __name__ == '__main__':
 		env_config_fn=config_fn)
 
 	trainer.train(10, epoch_callback=callback)
+	trainer.evaluate()
 

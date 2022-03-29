@@ -99,6 +99,18 @@ class KODOKUTrainer:
 					self.summaryWriter.add_scalar('EpRet_' + policy + '_' + k, result['policy_reward_' + k][policy], epoch)
 
 
+	def evaluate(self) -> ResultDict:
+		""" Run evaluation
+		
+		Returns:
+		    ResultDict: Evaluation result
+		"""
+		self.trainer.callbacks.reset()
+		result = self.trainer.evaluate()
+		print(pretty_print(result))
+		return result
+
+
 	def log(self) -> Dict:
 		""" Get training log
 		
