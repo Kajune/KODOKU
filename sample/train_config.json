@@ -1,0 +1,36 @@
+{
+	"general": {
+		"framework": "torch",
+		"seed": 12345,
+		"num_workers": 0,
+		"num_gpus": 1,
+		"num_cpus_per_worker": 0,
+		"num_gpus_per_worker": 0,
+		"num_envs_per_worker": 2,
+		"create_env_on_driver": true,
+		"evaluation_duration": 10,
+		"evaluation_duration_unit": "episodes",
+		"evaluation_num_workers": 0
+	},
+
+	"environment": {
+		"render_env": true,
+		"horizon": null,
+		"batch_mode": "truncate_episodes"
+	},
+
+	"algorithm": "PPO",
+
+	"training": {
+		"gamma": 0.99,
+		"lr": 1e-4,
+		"train_batch_size": 1000,
+		"rollout_fragment_length": 500,
+		"vf_loss_coeff": 1.0,
+		"model": "default"
+	},
+
+	"multiagent": {
+		"policies_to_train": null
+	}
+}
