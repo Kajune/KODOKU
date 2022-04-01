@@ -7,7 +7,7 @@ Multi-agent trainining is included in ```KODOKUTrainer```.
 
 ```
 def config_fn():
-  return \
+	return \
 		'default', \
 		{
 			"depth": 2.0,
