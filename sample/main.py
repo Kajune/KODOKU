@@ -6,7 +6,7 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from kodoku.trainer import KODOKUTrainer
-from kodoku.policy import DefaultPolicyMappingManager, SelfPlayPolicyMappingManager
+from kodoku.policy import DefaultPolicyMappingManager, MultiSelfPlayPolicyMappingManager
 from sampleEnv import SimpleBattlefieldEnv
 
 
@@ -35,13 +35,16 @@ def callback(trainer : KODOKUTrainer, epoch : int, result : Dict):
 
 
 if __name__ == '__main__':
-	trainer = KODOKUTrainer(log_dir='./log_dir', 
+	trainer = KODOKUTrainer(
+		log_dir='./log_dir', 
 		env_class=SimpleBattlefieldEnv,
 		train_config=json.load(open('train_config.json')),
 		env_config_fn=config_fn,
-		policy_mapping_manager=SelfPlayPolicyMappingManager(3),
+		policy_mapping_manager=MultiSelfPlayPolicyMappingManager(["atk"], ["def"], 3, 2),
 	)
 
 	trainer.train(10, epoch_callback=callback)
+	# TODO: 簡単にセーブ・ロードできる仕組み
+	# TODO: WoLF
 	trainer.evaluate()
 

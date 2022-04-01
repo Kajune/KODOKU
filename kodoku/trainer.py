@@ -107,7 +107,7 @@ class KODOKUTrainer:
 
 			# Update policy mapping
 			if self.policy_mapping_manager is not None:
-				self.policy_mapping_manager.update_policy_mapping(self.reward())
+				self.policy_mapping_manager.update_policy_configuration(self, self.reward())
 
 			# Invoke callback
 			if epoch_callback is not None:
@@ -145,7 +145,7 @@ class KODOKUTrainer:
 		return self.trainer.callbacks.log()
 
 
-	def reward(self) -> List[Dict]:
+	def reward(self) -> Dict[int,Dict]:
 		""" Get training rewards
 
 		Returns:

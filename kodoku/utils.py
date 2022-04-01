@@ -1,6 +1,7 @@
 from typing import *
 from gym import Env, spaces
 import numpy as np
+from numba import njit
 
 import ray
 from ray.tune.logger import pretty_print
@@ -15,9 +16,10 @@ from ray.rllib.evaluation.episode import Episode
 from kodoku.env import EnvWrapper
 
 
+
 class LogCallbacks(DefaultCallbacks):
 	log_dict = {}
-	reward_list = []
+	reward_dict = {}
 
 	def __init__(self):
 		super().__init__()
@@ -28,13 +30,13 @@ class LogCallbacks(DefaultCallbacks):
 		return LogCallbacks.log_dict
 
 
-	def reward(self) -> List:
-		return LogCallbacks.reward_list
+	def reward(self) -> Dict[int,Dict]:
+		return LogCallbacks.reward_dict
 
 
 	def reset(self) -> None:
 		LogCallbacks.log_dict = {}
-		LogCallbacks.reward_list = []
+		LogCallbacks.reward_dict = {}
 
 
 	def common_callback(self, base_env: BaseEnv, env_index: int = None, **kwargs):
@@ -70,7 +72,7 @@ class LogCallbacks(DefaultCallbacks):
 	def on_episode_end(self, *, worker: "RolloutWorker", base_env: BaseEnv,
 					   policies: Dict[PolicyID, Policy], episode: Episode,
 					   **kwargs) -> None:
-		LogCallbacks.reward_list.append(episode.agent_rewards)
+		LogCallbacks.reward_dict[episode.episode_id] = episode.agent_rewards
 
 
 def print_network_architecture(trainer : Trainer, policies : List[str]) -> None:
