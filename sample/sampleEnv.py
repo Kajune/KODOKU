@@ -8,7 +8,7 @@ from ray.rllib.evaluation.episode import Episode
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from kodoku.envWrapper import EnvWrapper
+from kodoku.env import EnvWrapper
 
 
 class SimpleBattlefieldUnit:
@@ -175,6 +175,9 @@ class SimpleBattlefieldEnv(EnvWrapper):
 
 
 	def get_policy_mapping_fn(self) -> Callable[[str, Episode], str]:
+		if self.env is None:
+			self.env = self.initialize_env(self.config_fn()[1])
+			print("Initialized dummy env to compute spaces.")
 
 		def policy_mapping_fn(agent_id, episode, 
 			atk_units=[str(unit) for unit in self.env.atk_units],

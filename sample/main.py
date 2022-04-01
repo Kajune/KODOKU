@@ -6,6 +6,7 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from kodoku.trainer import KODOKUTrainer
+from kodoku.policy import DefaultPolicyMappingManager, SelfPlayPolicyMappingManager
 from sampleEnv import SimpleBattlefieldEnv
 
 
@@ -30,7 +31,6 @@ def config_fn():
 
 def callback(trainer : KODOKUTrainer, epoch : int, result : Dict):
 	log = trainer.log()
-	print("Epoch %d: " % epoch, log)
 	json.dump(log, open('./log_dir/latest_log.json', 'w'), indent=2)
 
 
@@ -38,7 +38,9 @@ if __name__ == '__main__':
 	trainer = KODOKUTrainer(log_dir='./log_dir', 
 		env_class=SimpleBattlefieldEnv,
 		train_config=json.load(open('train_config.json')),
-		env_config_fn=config_fn)
+		env_config_fn=config_fn,
+		policy_mapping_manager=SelfPlayPolicyMappingManager(3),
+	)
 
 	trainer.train(10, epoch_callback=callback)
 	trainer.evaluate()

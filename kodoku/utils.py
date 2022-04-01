@@ -12,11 +12,12 @@ from ray.rllib.policy import Policy
 from ray.rllib.utils.typing import AgentID, PolicyID
 from ray.rllib.evaluation.episode import Episode
 
-from kodoku.envWrapper import EnvWrapper
+from kodoku.env import EnvWrapper
 
 
 class LogCallbacks(DefaultCallbacks):
 	log_dict = {}
+	reward_list = []
 
 	def __init__(self):
 		super().__init__()
@@ -27,8 +28,13 @@ class LogCallbacks(DefaultCallbacks):
 		return LogCallbacks.log_dict
 
 
+	def reward(self) -> List:
+		return LogCallbacks.reward_list
+
+
 	def reset(self) -> None:
 		LogCallbacks.log_dict = {}
+		LogCallbacks.reward_list = []
 
 
 	def common_callback(self, base_env: BaseEnv, env_index: int = None, **kwargs):
@@ -61,6 +67,12 @@ class LogCallbacks(DefaultCallbacks):
 		LogCallbacks.log_dict[scenario_name][ei][-1].append(env.log())
 
 
+	def on_episode_end(self, *, worker: "RolloutWorker", base_env: BaseEnv,
+					   policies: Dict[PolicyID, Policy], episode: Episode,
+					   **kwargs) -> None:
+		LogCallbacks.reward_list.append(episode.agent_rewards)
+
+
 def print_network_architecture(trainer : Trainer, policies : List[str]) -> None:
 	""" Print network architectures for policies
 	
@@ -75,3 +87,4 @@ def print_network_architecture(trainer : Trainer, policies : List[str]) -> None:
 			print(policy.model)
 		else:
 			print('Policy for %s is None' % policy_name)
+

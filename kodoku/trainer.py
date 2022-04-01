@@ -11,7 +11,8 @@ from ray.rllib.utils.typing import ResultDict
 
 from torch.utils.tensorboard import SummaryWriter
 
-from kodoku.envWrapper import EnvWrapper
+from kodoku.env import EnvWrapper
+from kodoku.policy import *
 from kodoku.utils import LogCallbacks, print_network_architecture
 
 
@@ -21,6 +22,7 @@ class KODOKUTrainer:
 		env_class : Type[EnvWrapper],
 		train_config : Dict,
 		env_config_fn : Callable[[], Tuple[str, Dict]],
+		policy_mapping_manager : Optional[PolicyMappingManager] = None,
 		ray_config : Dict = {}):
 		""" Trainer ctor
 		
@@ -28,8 +30,8 @@ class KODOKUTrainer:
 		    log_dir (str): Location to store training summary, trajectory, weight, etc..
 		    env_class (Type[EnvWrapper]): Environment class
 		    train_config (Dict): Training config
-		    multiagent_config (Dict): Multiagent config
 		    env_config_fn (Callable[[], Tuple[str, Dict]]): Functor to set config on env
+		    policy_mapping_manager (Optional[PolicyMappingManager], optional): Policy mapping manager instance
 		    ray_config (Dict, optional): ray configuration for init (memory, num gpu, etc..)
 		"""
 
@@ -59,10 +61,27 @@ class KODOKUTrainer:
 			self.train_config["multiagent"][k] = v
 
 		tmp_env = self.train_config["env"](self.train_config["env_config"])
-		self.train_config["multiagent"]["policies"] = { 
-			policy_name: (None, obs_space, act_space, {}) for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
-		}
-		self.train_config["multiagent"]["policy_mapping_fn"] = tmp_env.get_policy_mapping_fn()
+		policy_mapping_fn_tmp = tmp_env.get_policy_mapping_fn()
+
+		self.policy_mapping_manager = policy_mapping_manager
+
+		if self.policy_mapping_manager is None:
+			self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn_tmp
+			self.train_config["multiagent"]["policies"] = { 
+				policy_name: (None, obs_space, act_space, {}) 
+					for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
+			}
+
+		else:
+			def policy_mapping_fn(agent_id : str, episode : Episode, **kwargs) -> str:
+				return self.policy_mapping_manager.get_policy_mapping(policy_mapping_fn_tmp(agent_id, episode, **kwargs), episode)
+
+			self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn
+			self.train_config["multiagent"]["policies"] = { 
+				subpolicy_name: (None, obs_space, act_space, {}) 
+					for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
+						for subpolicy_name in self.policy_mapping_manager.get_policy_mapping_list(policy_name) 
+			}
 
 		# Initialize trainer
 		self.trainer = trainer_class(config=self.train_config)
@@ -85,6 +104,12 @@ class KODOKUTrainer:
 		for epoch in range(start_epoch, num_epochs):
 			self.trainer.callbacks.reset()
 			result = self.trainer.train()
+
+			# Update policy mapping
+			if self.policy_mapping_manager is not None:
+				self.policy_mapping_manager.update_policy_mapping(self.reward())
+
+			# Invoke callback
 			if epoch_callback is not None:
 				epoch_callback(self, epoch, result)
 
@@ -118,3 +143,13 @@ class KODOKUTrainer:
 		    Dict: log
 		"""
 		return self.trainer.callbacks.log()
+
+
+	def reward(self) -> List[Dict]:
+		""" Get training rewards
+
+		Returns:
+			List: reward
+		"""
+		return self.trainer.callbacks.reward()
+		
