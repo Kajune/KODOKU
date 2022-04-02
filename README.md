@@ -53,10 +53,12 @@ trainer = KODOKUTrainer(
 ```
 
 An example is provided in ```sample/main_sym.py```.
+
 You can extend FSP to PFSP or other variants by inheriting ```SelfPlayManager``` and override ```policy_selection```.
 
 ## Asymmetric Fictitious Self-play Training
 FSP can be enforced even when the env is asymmetric.
+
 An example is provided in ```sample/main_asym.py```.
 
 ## Win or Learn Fast (WoLF)
