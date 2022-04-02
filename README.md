@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
 An example is provided in ```sample/main.py```.
 
-## Self-play Training
+## Fictitious Self-Play Training (FSP)
 Self-play can be easily implemented via ```PolicyMappingManager```.
 
 ```
@@ -53,10 +53,10 @@ trainer = KODOKUTrainer(
 ```
 
 An example is provided in ```sample/main_sym.py```.
+You can extend FSP to PFSP or other variants by inheriting ```SelfPlayManager``` and override ```policy_selection```.
 
-## Asymmetric Self-play Training
-Self-play can be enforced even when the env is asymmetric.
-
+## Asymmetric Fictitious Self-play Training
+FSP can be enforced even when the env is asymmetric.
 An example is provided in ```sample/main_asym.py```.
 
 ## Win or Learn Fast (WoLF)
