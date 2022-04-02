@@ -74,7 +74,8 @@ class KODOKUTrainer:
 
 		else:
 			def policy_mapping_fn(agent_id : str, episode : Episode, **kwargs) -> str:
-				return self.policy_mapping_manager.get_policy_mapping(policy_mapping_fn_tmp(agent_id, episode, **kwargs), episode)
+				return self.policy_mapping_manager.get_policy_mapping(
+					agent_id, policy_mapping_fn_tmp(agent_id, episode, **kwargs), episode)
 
 			self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn
 			self.train_config["multiagent"]["policies"] = { 
