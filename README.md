@@ -14,8 +14,7 @@ def config_fn():
 			"width": 1.0,
 			"atk_spawn_line": 1.5,
 			"def_spawn_line": 0.5,
-			"def_line": 0.5,
-			"atk_num" : 4,
+			"atk_num" : 3,
 			"def_num" : 3,
 			"unit_hp" : 1.0,
 			"unit_power": 0.1,
@@ -24,31 +23,42 @@ def config_fn():
 			"timelimit": 500,
 		}
 
-trainer = KODOKUTrainer(
-	log_dir='./log_dir', 
-	env_class=SimpleBattlefieldEnv,
-	train_config=json.load(open('train_config.json')),
-	env_config_fn=config_fn,
-)
 
-trainer.train(num_epochs=10)
+if __name__ == '__main__':
+	trainer = KODOKUTrainer(
+		log_dir='./log_dir', 
+		env_class=SimpleBattlefieldEnv_Sym,
+		train_config=json.load(open('train_config.json')),
+		env_config_fn=config_fn,
+	)
+
+	trainer.train(10, epoch_callback=callback)
+	trainer.evaluate()
 ```
 
-An example is provided in
+An example is provided in ```sample/main.py```.
 
-## Self-play Training
+## Fictitious Self-Play Training (FSP)
 Self-play can be easily implemented via ```PolicyMappingManager```.
 
 ```
 trainer = KODOKUTrainer(
 	log_dir='./log_dir', 
-	env_class=SimpleBattlefieldEnv,
+	env_class=SimpleBattlefieldEnv_Sym,
 	train_config=json.load(open('train_config.json')),
 	env_config_fn=config_fn,
-	policy_mapping_manager=SelfPlayPolicyMappingManager(3), # Three sub-policies per policy
+	# Three subpolicies for each policy
+	policy_mapping_manager=SelfPlayManager(lambda agent: "blufor" if agent.startswith("atk") else "redfor", 3),
 )
 ```
 
-An example is provided in
+An example is provided in ```sample/main_sym.py```.
+
+You can extend FSP to PFSP or other variants by inheriting ```SelfPlayManager``` and override ```policy_selection```.
+
+## Asymmetric Fictitious Self-play Training
+FSP can be enforced even when the env is asymmetric.
+
+An example is provided in ```sample/main_asym.py```.
 
 ## Win or Learn Fast (WoLF)
