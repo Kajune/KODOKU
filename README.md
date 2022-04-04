@@ -38,6 +38,13 @@ if __name__ == '__main__':
 
 An example is provided in ```sample/main.py```.
 
+## Self-Play Training
+Simple self-play is applied if policy_mapping_fn returns same policy for all agents.
+```
+def policy_mapping_fn(agent_id, episode, **kwargs):
+	return "common"
+```
+
 ## Fictitious Self-Play Training (FSP)
 Self-play can be easily implemented via ```PolicyMappingManager```.
 
