@@ -1,6 +1,6 @@
 # KODOKU
-## Multi-agent Self-Play Reinforcement Learning Library
-KODOKU is a wrapper library of rllib (https://github.com/ray-project/ray) to make it easier to implement complicated multi-agent training scheme.
+## Multi-agent Reinforcement Learning Library
+KODOKU is a framework-style wrapper library of rllib (https://github.com/ray-project/ray) to make it easier to implement complicated multi-agent training scheme.
 
 ## Simple Multi-agent Training
 Multi-agent trainining is included in ```KODOKUTrainer```.
@@ -38,6 +38,13 @@ if __name__ == '__main__':
 
 An example is provided in ```sample/main.py```.
 
+## Self-Play Training
+Simple self-play is applied if policy_mapping_fn returns same policy for all agents.
+```
+def policy_mapping_fn(agent_id, episode, **kwargs):
+	return "common"
+```
+
 ## Fictitious Self-Play Training (FSP)
 Self-play can be easily implemented via ```PolicyMappingManager```.
 
@@ -62,3 +69,20 @@ FSP can be enforced even when the env is asymmetric.
 An example is provided in ```sample/main_asym.py```.
 
 ## Win or Learn Fast (WoLF)
+WoLF is a technique to stabilize asymmetric competitive multi-agent training by scaling learning rate based on payoff.
+In this framework, WoLF is realized via ```lr_schedule```, however you can still use scheduler normally because existing scheduler will be wrapped by ```ScheduleScaler```.
+
+```
+trainer = KODOKUTrainer(
+	log_dir='./log_dir', 
+	env_class=SimpleBattlefieldEnv_Asym,
+	# Note: train_config may have lr_schedule as usual.
+	train_config=json.load(open('train_config.json')),
+	env_config_fn=config_fn,
+	policy_mapping_manager=SelfPlayManager(
+		agent_force_mapping_fn=lambda agent: "blufor" if agent.startswith("atk") else "redfor",
+		wolf_fn=lambda reward: 0.25 if reward > 0 else 1.0)
+)
+```
+
+An example is provided in ```sample/main_wolf.py```.
