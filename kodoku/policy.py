@@ -5,6 +5,7 @@ import numpy as np
 import ray
 from ray.rllib.agents.trainer import Trainer
 from ray.rllib.evaluation.episode import Episode
+from ray.rllib.utils.typing import ResultDict
 from ray.rllib.utils.schedules.constant_schedule import ConstantSchedule
 
 from kodoku.utils import ScheduleScaler
@@ -38,12 +39,16 @@ class PolicyMappingManager(metaclass=ABCMeta):
 
 
 	@abstractmethod
-	def update_policy_configuration(self, trainer : Trainer, reward_list : List[Dict]) -> None:
+	def update_policy_configuration(self, trainer : Trainer, result : ResultDict, reward_list : List[Dict]) -> None:
 		""" Update policy mapping according to training result, if necessary
 		
 		Args:
 		    trainer (Trainer): Trainer instance
+		    result (ResultDict): Training result summary
 		    reward_list (List[Dict]): Reward list by policy		
+		
+		Raises:
+		    NotImplementedError: Description
 		"""
 		raise NotImplementedError()
 
@@ -60,7 +65,7 @@ class DefaultPolicyMappingManager(PolicyMappingManager):
 		return [policy_id]
 
 
-	def update_policy_configuration(self, trainer : Trainer, reward_list : List[Dict]) -> None:
+	def update_policy_configuration(self, trainer : Trainer, result : ResultDict, reward_list : List[Dict]) -> None:
 		return
 
 
@@ -162,12 +167,13 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 		return [self.subpolicy_name(policy_id, i) for i in range(self.num_subpolicies)]
 
 
-	def update_policy_configuration(self, trainer : Trainer, reward_list : List[Dict]) -> None:
+	def update_policy_configuration(self, trainer : Trainer, result : ResultDict, reward_list : List[Dict]) -> None:
 		""" Update policy configuration
 		Calls user-defined configuration function after computing blufor vs redfor subpolicy reward matrix.
 		
 		Args:
 		    trainer (Trainer): Trainer instance
+		    result (ResultDict): Training result summary
 		    reward_list (List[Dict]): Reward list
 		"""
 		cum_rewards, match_matrix, policy_force_mapping = self.compute_match_results(reward_list, 
@@ -184,7 +190,7 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 				forces = list(set(policy_force_mapping[policy_id]))
 				if len(forces) == 1:
 					policy = trainer.get_policy(policy_id)
-					scale = self.wolf_fn(np.mean(cum_rewards[forces[0]]))
+					scale = self.wolf_fn(result["policy_reward_mean"][policy_id])
 
 					if isinstance(policy._lr_schedule, ScheduleScaler):
 						policy._lr_schedule = ScheduleScaler(policy._lr_schedule.schedule, scale)

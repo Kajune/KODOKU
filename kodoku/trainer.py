@@ -115,7 +115,7 @@ class KODOKUTrainer:
 
 			# Update policy mapping
 			if self.policy_mapping_manager is not None:
-				self.policy_mapping_manager.update_policy_configuration(self.trainer, self.reward())
+				self.policy_mapping_manager.update_policy_configuration(self.trainer, result, self.reward())
 
 			# Invoke callback
 			if epoch_callback is not None:
