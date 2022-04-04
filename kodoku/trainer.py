@@ -4,6 +4,7 @@ import numpy as np
 
 import ray
 import ray.rllib.agents as agents
+from ray.rllib.agents.trainer import Trainer
 from ray.tune.logger import pretty_print
 from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog, MODEL_DEFAULTS
@@ -46,6 +47,10 @@ class KODOKUTrainer:
 		for group in ["general", "environment", "training"]:
 			for k, v in train_config[group].items():
 				self.train_config[k] = v
+
+		# Set lr scheduler for wolf
+		if self.train_config["lr_schedule"] is None:
+			self.train_config["lr_schedule"] = [[0,self.train_config["lr"]],[1,self.train_config["lr"]]]
 
 		if self.train_config["model"] == "default":
 			self.train_config["model"] = MODEL_DEFAULTS
@@ -108,7 +113,7 @@ class KODOKUTrainer:
 
 			# Update policy mapping
 			if self.policy_mapping_manager is not None:
-				self.policy_mapping_manager.update_policy_configuration(self, self.reward())
+				self.policy_mapping_manager.update_policy_configuration(self.trainer, self.reward())
 
 			# Invoke callback
 			if epoch_callback is not None:

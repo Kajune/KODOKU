@@ -10,8 +10,9 @@ from ray.rllib.agents.trainer import Trainer
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.models import ModelCatalog, MODEL_DEFAULTS
 from ray.rllib.policy import Policy
-from ray.rllib.utils.typing import AgentID, PolicyID
+from ray.rllib.utils.typing import AgentID, PolicyID, TensorType
 from ray.rllib.evaluation.episode import Episode
+from ray.rllib.utils.schedules.schedule import Schedule
 
 from kodoku.env import EnvWrapper
 
@@ -79,8 +80,8 @@ def print_network_architecture(trainer : Trainer, policies : List[str]) -> None:
 	""" Print network architectures for policies
 	
 	Args:
-	    trainer (Trainer): Trainer object
-	    policies (List[str]): Policies to print
+		trainer (Trainer): Trainer object
+		policies (List[str]): Policies to print
 	"""
 	for policy_name in policies:
 		print(policy_name, "Network Architecture")
@@ -90,3 +91,22 @@ def print_network_architecture(trainer : Trainer, policies : List[str]) -> None:
 		else:
 			print('Policy for %s is None' % policy_name)
 
+
+
+class ScheduleScaler(Schedule):
+	def __init__(self, schedule : Schedule, scale : float = 1.0):
+		""" Schedule scaler
+		This class wraps existing schedule instance to scale its value
+		
+		Args:
+		    schedule (Schedule): Schedule instance
+		    scale (float, optional): Scale
+		"""
+		self.schedule = schedule
+		self.scale = scale
+		self.framework = schedule.framework
+
+	
+	def _value(self, t: Union[int, TensorType]) -> Any:
+		return self.schedule(t) * self.scale
+		

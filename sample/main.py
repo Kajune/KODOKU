@@ -6,7 +6,6 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from kodoku.trainer import KODOKUTrainer
-from kodoku.policy import DefaultPolicyMappingManager, SelfPlayManager
 from sampleEnv import SimpleBattlefieldEnv_Sym
 
 

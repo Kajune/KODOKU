@@ -6,7 +6,7 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from kodoku.trainer import KODOKUTrainer
-from kodoku.policy import DefaultPolicyMappingManager, SelfPlayManager
+from kodoku.policy import FictitiousSelfPlayManager
 from sampleEnv import SimpleBattlefieldEnv_Asym
 
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 		env_class=SimpleBattlefieldEnv_Asym,
 		train_config=json.load(open('train_config.json')),
 		env_config_fn=config_fn,
-		policy_mapping_manager=SelfPlayManager(lambda agent: "blufor" if agent.startswith("atk") else "redfor", 3),
+		policy_mapping_manager=FictitiousSelfPlayManager(lambda agent: "blufor" if agent.startswith("atk") else "redfor", 3),
 	)
 
 	trainer.train(10, epoch_callback=callback)
