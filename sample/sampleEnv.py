@@ -54,10 +54,14 @@ class SimpleBattlefieldSimulator:
 		def_spawn_line : float,
 		atk_num : int,
 		def_num : int,
-		unit_hp : float,
-		unit_power : float,
-		unit_range : float,
-		unit_speed : float,
+		atk_unit_hp : float,
+		atk_unit_power : float,
+		atk_unit_range : float,
+		atk_unit_speed : float,
+		def_unit_hp : float,
+		def_unit_power : float,
+		def_unit_range : float,
+		def_unit_speed : float,
 		timelimit : int,
 		**kwargs):
 
@@ -67,13 +71,13 @@ class SimpleBattlefieldSimulator:
 
 		self.atk_units = [
 			SimpleBattlefieldUnit(np.array([np.random.uniform(atk_spawn_line, depth), np.random.uniform(0, width)]), 
-				unit_hp, unit_power, unit_range, unit_speed, 'atk' + str(i)) 
+				atk_unit_hp, atk_unit_power, atk_unit_range, atk_unit_speed, 'atk' + str(i)) 
 			for i in range(atk_num)
 		]
 
 		self.def_units = [
 			SimpleBattlefieldUnit(np.array([np.random.uniform(0, def_spawn_line), np.random.uniform(0, width)]), 
-				unit_hp, unit_power, unit_range, unit_speed, 'def' + str(i)) 
+				def_unit_hp, def_unit_power, def_unit_range, def_unit_speed, 'def' + str(i)) 
 			for i in range(def_num)
 		]
 
@@ -396,10 +400,14 @@ if __name__ == '__main__':
 				"def_line": 0.5,
 				"atk_num" : 4,
 				"def_num" : 3,
-				"unit_hp" : 1.0,
-				"unit_power": 0.1,
-				"unit_range": 0.1,
-				"unit_speed": 0.05,
+				"atk_unit_hp" : 1.0,
+				"atk_unit_power": 0.1,
+				"atk_unit_range": 0.1,
+				"atk_unit_speed": 0.05,
+				"def_unit_hp" : 1.0,
+				"def_unit_power": 0.1,
+				"def_unit_range": 0.1,
+				"def_unit_speed": 0.05,
 				"timelimit": 500,
 			}
 

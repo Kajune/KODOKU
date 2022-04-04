@@ -19,10 +19,14 @@ def config_fn():
 			"def_spawn_line": 0.5,
 			"atk_num" : 3,
 			"def_num" : 3,
-			"unit_hp" : 1.0,
-			"unit_power": 0.1,
-			"unit_range": 0.1,
-			"unit_speed": 0.05,
+			"atk_unit_hp" : 1.0,
+			"atk_unit_power": 0.1,
+			"atk_unit_range": 0.1,
+			"atk_unit_speed": 0.05,
+			"def_unit_hp" : 1.0,
+			"def_unit_power": 0.1,
+			"def_unit_range": 0.1,
+			"def_unit_speed": 0.05,
 			"timelimit": 500,
 		}
 

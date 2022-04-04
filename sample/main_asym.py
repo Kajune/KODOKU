@@ -21,10 +21,14 @@ def config_fn():
 			"def_line": 0.5,
 			"atk_num" : 4,
 			"def_num" : 3,
-			"unit_hp" : 1.0,
-			"unit_power": 0.1,
-			"unit_range": 0.1,
-			"unit_speed": 0.05,
+			"atk_unit_hp" : 1.0,
+			"atk_unit_power": 0.1,
+			"atk_unit_range": 0.1,
+			"atk_unit_speed": 0.05,
+			"def_unit_hp" : 1.0,
+			"def_unit_power": 0.1,
+			"def_unit_range": 0.15,
+			"def_unit_speed": 0.025,
 			"timelimit": 500,
 		}
 
@@ -40,9 +44,13 @@ if __name__ == '__main__':
 		env_class=SimpleBattlefieldEnv_Asym,
 		train_config=json.load(open('train_config.json')),
 		env_config_fn=config_fn,
-		policy_mapping_manager=FictitiousSelfPlayManager(lambda agent: "blufor" if agent.startswith("atk") else "redfor", 3),
+		policy_mapping_manager=FictitiousSelfPlayManager(
+			lambda agent: "blufor" if agent.startswith("atk") else "redfor",
+			3,
+			wolf_fn=lambda reward: 0.25 if reward > 0 else 1.0),
 	)
 
-	trainer.train(10, epoch_callback=callback)
+	trainer.train(100, epoch_callback=callback)
+	trainer.save_checkpoint('./log_dir/checkpoint')
 	trainer.evaluate()
 

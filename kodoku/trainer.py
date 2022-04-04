@@ -127,7 +127,8 @@ class KODOKUTrainer:
 			for policy in result["policy_reward_mean"]:
 				if policy in result["info"]["learner"]:
 					for k, v in result["info"]["learner"][policy]["learner_stats"].items():
-						self.summaryWriter.add_scalar(k + '_' + policy, v, epoch)
+						if np.isscalar(v):
+							self.summaryWriter.add_scalar(k + '_' + policy, v, epoch)
 				for k in ['mean', 'min', 'max']:
 					self.summaryWriter.add_scalar('EpRet_' + policy + '_' + k, result['policy_reward_' + k][policy], epoch)
 

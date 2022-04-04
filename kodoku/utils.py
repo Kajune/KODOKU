@@ -10,6 +10,8 @@ from ray.rllib.agents.trainer import Trainer
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.models import ModelCatalog, MODEL_DEFAULTS
 from ray.rllib.policy import Policy
+from ray.rllib.policy.tf_policy import TFPolicy
+from ray.rllib.policy.torch_policy import TorchPolicy
 from ray.rllib.utils.typing import AgentID, PolicyID, TensorType
 from ray.rllib.evaluation.episode import Episode
 from ray.rllib.utils.schedules.schedule import Schedule
@@ -87,7 +89,12 @@ def print_network_architecture(trainer : Trainer, policies : List[str]) -> None:
 		print(policy_name, "Network Architecture")
 		policy = trainer.get_policy(policy_name)
 		if policy is not None:
-			print(policy.model)
+			if isinstance(policy, TorchPolicy):
+				print(policy.model)
+			elif isinstance(policy, TFPolicy):
+				policy.model.base_model.summary()
+			else:
+				print('Unknown framework:', policy)
 		else:
 			print('Policy for %s is None' % policy_name)
 

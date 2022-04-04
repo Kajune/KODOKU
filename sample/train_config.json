@@ -1,6 +1,6 @@
 {
 	"general": {
-		"framework": "torch",
+		"framework": "tf",
 		"seed": 12345,
 		"num_workers": 0,
 		"num_gpus": 1,
