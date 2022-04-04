@@ -69,6 +69,7 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 	def __init__(self, 
 		agent_force_mapping_fn : Callable[[str], str],
 		num_subpolicies : int,
+		subpolicy_priority_fn : Optional[Callable[[np.ndarray], np.ndarray]] = None,
 		wolf_fn : Optional[Callable[[float], float]] = None,
 	):
 		""" FictitiousSelfPlayManager
@@ -80,6 +81,7 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 		Args:
 		    agent_force_mapping_fn (Callable[[str], str]): Function to determine which force an agent belongs to. Must return "blufor" or "redfor".
 		    num_subpolicies (int): Number of subpolicies
+		    subpolicy_priority_fn (Optional[Callable[[np.ndarray], np.ndarray]], optional): Function to update subpolicy priority based on current payoff matrix.
 		    wolf_fn (Optional[Callable[[float], float]], optional): Function to scale learning rate based on "Win-or-Learn-Fast" principle.
 		"""
 		self.agent_force_mapping_fn = agent_force_mapping_fn
@@ -87,6 +89,12 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 		self.episode_policy_mapping : Dict[int,Tuple[int,int]] = {}
 		self.episode_agent_mapping : Dict[int,Dict[str,str]] = {}
 		self.match_results = [[[] for ri in range(self.num_subpolicies)] for bi in range(self.num_subpolicies)]
+
+		self.subpolicy_priority_fn = subpolicy_priority_fn
+		self.selection = np.dstack(np.meshgrid(np.arange(self.num_subpolicies), np.arange(self.num_subpolicies))).reshape(-1,2)
+		self.p = np.ones((self.num_subpolicies, self.num_subpolicies), dtype=np.float32)
+		self.p /= np.sum(self.p)
+
 		self.wolf_fn = wolf_fn
 
 
@@ -100,9 +108,10 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 		Returns:
 		    Dict[str, int]: Subpolicy ids for each team
 		"""
+		index = np.random.choice(np.arange(len(self.selection)), p=self.p.reshape(-1,))
 		return {
-			"blufor": np.random.randint(self.num_subpolicies), 
-			"redfor": np.random.randint(self.num_subpolicies)
+			"blufor": self.selection[index][0], 
+			"redfor": self.selection[index][1]
 		}
 
 
@@ -161,8 +170,14 @@ class FictitiousSelfPlayManager(PolicyMappingManager):
 		    trainer (Trainer): Trainer instance
 		    reward_list (List[Dict]): Reward list
 		"""
-		cum_rewards, current_match_results, policy_force_mapping = self.compute_match_results(reward_list, 
+		cum_rewards, match_matrix, policy_force_mapping = self.compute_match_results(reward_list, 
 			ma_length = len(reward_list) // (self.num_subpolicies ** 2))
+
+		if self.subpolicy_priority_fn is not None and match_matrix is not None:
+			self.p = self.subpolicy_priority_fn(match_matrix)
+			self.p /= np.sum(self.p)
+			assert isinstance(self.p, np.ndarray) and self.p.shape == (self.num_subpolicies, self.num_subpolicies), \
+				"subpolicy_priority_fn must return (%d, %d) matrix." % (self.num_subpolicies, self.num_subpolicies)
 		
 		if self.wolf_fn is not None:
 			for policy_id in policy_force_mapping:

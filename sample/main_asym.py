@@ -40,7 +40,10 @@ if __name__ == '__main__':
 		env_class=SimpleBattlefieldEnv_Asym,
 		train_config=json.load(open('train_config.json')),
 		env_config_fn=config_fn,
-		policy_mapping_manager=FictitiousSelfPlayManager(lambda agent: "blufor" if agent.startswith("atk") else "redfor", 3),
+		policy_mapping_manager=FictitiousSelfPlayManager(
+			lambda agent: "blufor" if agent.startswith("atk") else "redfor",
+			3,
+			wolf_fn=lambda reward: 0.25 if reward > 0 else 1.0),
 	)
 
 	trainer.train(10, epoch_callback=callback)
