@@ -69,13 +69,14 @@ FSP can be enforced even when the env is asymmetric.
 An example is provided in ```sample/main_asym.py```.
 
 ## Win or Learn Fast (WoLF)
-WoLF is a technique to stabilize heterogeneous competitive multi-agent training by scaling learning rate based on payoff.
+WoLF is a technique to stabilize asymmetric competitive multi-agent training by scaling learning rate based on payoff.
 In this framework, WoLF is realized via ```lr_schedule```, however you can still use scheduler normally because existing scheduler will be wrapped by ```ScheduleScaler```.
 
 ```
 trainer = KODOKUTrainer(
 	log_dir='./log_dir', 
 	env_class=SimpleBattlefieldEnv_Asym,
+	# Note: train_config may have lr_schedule as usual.
 	train_config=json.load(open('train_config.json')),
 	env_config_fn=config_fn,
 	policy_mapping_manager=SelfPlayManager(
