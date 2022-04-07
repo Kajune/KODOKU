@@ -1,6 +1,7 @@
 # KODOKU
 ## Multi-agent Reinforcement Learning Library
 KODOKU is a framework-style wrapper library of rllib (https://github.com/ray-project/ray) to make it easier to implement complicated multi-agent training scheme.
+
 https://user-images.githubusercontent.com/14792604/162190334-2a8acd13-ab65-4a6a-92a8-3ece28cf2cb3.mp4
 
 
