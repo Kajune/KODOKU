@@ -139,6 +139,7 @@ class SimpleBattlefieldSimulator:
 
 		if self.count >= self.timelimit:
 			events['TIMELIMIT'] = 1
+		events['TIME_ELAPSE'] = 1 / self.timelimit
 
 		return events
 
@@ -239,10 +240,12 @@ class SimpleBattlefieldEnv_Sym(EnvWrapper):
 	def calc_reward(self, rewards, dones, unit_list, scale, 
 					kill_reward_scale = 0.1,
 					extinct_reward = 1,
-					timelimit_reward = 0.5):
+					timelimit_reward = 0.0,
+					timeelapse_reward = 0.5):
 		for unit in unit_list:
 			rewards[str(unit)] -= kill_reward_scale * self.events['ATK_KILLED'] * scale
 			rewards[str(unit)] += kill_reward_scale * self.events['DEF_KILLED'] * scale
+			rewards[str(unit)] -= timeelapse_reward * self.events['TIME_ELAPSE'] * scale
 
 			if 'ATK_EXTINCT' in self.events:
 				rewards[str(unit)] -= extinct_reward * scale
@@ -345,11 +348,13 @@ class SimpleBattlefieldEnv_Asym(SimpleBattlefieldEnv_Sym):
 					approach_reward_scale = 1.0,
 					breach_reward = 1,
 					extinct_reward = 1,
-					timelimit_reward = 0.5):
+					timelimit_reward = 0.0,
+					timeelapse_reward = 0.5):
 		for unit in unit_list:
 			rewards[str(unit)] -= kill_reward_scale * self.events['ATK_KILLED'] * scale
 			rewards[str(unit)] += kill_reward_scale * self.events['DEF_KILLED'] * scale
 			rewards[str(unit)] += approach_reward_scale * self.events['ATK_APPROACH'] * scale
+			rewards[str(unit)] -= timeelapse_reward * self.events['TIME_ELAPSE'] * scale
 
 			if 'ATK_BREACH' in self.events:
 				rewards[str(unit)] += breach_reward * scale

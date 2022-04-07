@@ -170,7 +170,6 @@ class KODOKUTrainer:
 		    policy_id (str): Policy id
 		"""
 		policy = self.trainer.get_policy(policy_id)
-		print(policy)
 		return policy
 	
 

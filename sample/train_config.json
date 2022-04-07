@@ -24,8 +24,8 @@
 	"training": {
 		"gamma": 0.99,
 		"lr": 1e-4,
-		"train_batch_size": 10000,
-		"rollout_fragment_length": 1250,
+		"train_batch_size": 40000,
+		"rollout_fragment_length": 4096,
 		"vf_loss_coeff": 1.0,
 		"model": "default"
 	},

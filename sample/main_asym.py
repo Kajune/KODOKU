@@ -27,8 +27,8 @@ def config_fn():
 			"atk_unit_speed": 0.05,
 			"def_unit_hp" : 1.0,
 			"def_unit_power": 0.1,
-			"def_unit_range": 0.15,
-			"def_unit_speed": 0.025,
+			"def_unit_range": 0.13,
+			"def_unit_speed": 0.02,
 			"timelimit": 500,
 		}
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 		policy_mapping_manager=FictitiousSelfPlayManager(
 			lambda agent: "blufor" if agent.startswith("atk") else "redfor",
 			3,
-			wolf_fn=lambda reward: 0.25 if reward > 0 else 1.0),
+			wolf_fn=lambda reward: 0.1 if reward > 0 else 1.0),
 	)
 
 	trainer.train(100, epoch_callback=callback)
