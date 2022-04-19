@@ -8,13 +8,14 @@ from ray.tune.logger import pretty_print
 import ray.rllib.agents as agents
 from ray.rllib.agents.trainer import Trainer
 from ray.rllib.policy.policy import Policy
+from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
 from ray.rllib.env.env_context import EnvContext
 from ray.rllib.models import ModelCatalog, MODEL_DEFAULTS
 from ray.rllib.utils.typing import ResultDict
 
 from torch.utils.tensorboard import SummaryWriter
 
-from kodoku.env import EnvWrapper
+from kodoku.env import EnvWrapper, MultiEnvWrapper
 from kodoku.policy import *
 from kodoku.utils import LogCallbacks, print_network_architecture
 
@@ -63,38 +64,47 @@ class KODOKUTrainer:
 		self.train_config["env"] = env_class
 		self.train_config["env_config"] = { "fn": env_config_fn }
 
-		# Multiagent configuration
-		for k, v in train_config["multiagent"].items():
-			self.train_config["multiagent"][k] = v
-
-		tmp_env = self.train_config["env"](self.train_config["env_config"])
-		policy_mapping_fn_tmp = tmp_env.get_policy_mapping_fn()
-
 		self.policy_mapping_manager = policy_mapping_manager
 
-		if self.policy_mapping_manager is None:
-			self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn_tmp
-			self.train_config["multiagent"]["policies"] = { 
-				policy_name: (None, obs_space, act_space, {}) 
-					for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
-			}
+		tmp_env = self.train_config["env"](self.train_config["env_config"])
+
+		if isinstance(tmp_env, MultiEnvWrapper):
+			# Multiagent configuration
+			for k, v in train_config["multiagent"].items():
+				self.train_config["multiagent"][k] = v
+
+			policy_mapping_fn_tmp = tmp_env.get_policy_mapping_fn()
+
+			if self.policy_mapping_manager is None:
+				self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn_tmp
+				self.train_config["multiagent"]["policies"] = { 
+					policy_name: (None, obs_space, act_space, {}) 
+						for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
+				}
+
+			else:
+				def policy_mapping_fn(agent_id : str, episode : Episode, **kwargs) -> str:
+					return self.policy_mapping_manager.get_policy_mapping(
+						agent_id, policy_mapping_fn_tmp(agent_id, episode, **kwargs), episode)
+
+				self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn
+				self.train_config["multiagent"]["policies"] = { 
+					subpolicy_name: (None, obs_space, act_space, {}) 
+						for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
+							for subpolicy_name in self.policy_mapping_manager.get_policy_mapping_list(policy_name) 
+				}
+
+			# Initialize trainer
+			self.trainer = trainer_class(config=self.train_config)
+			print_network_architecture(self.trainer, self.train_config["multiagent"]["policies"].keys())
 
 		else:
-			def policy_mapping_fn(agent_id : str, episode : Episode, **kwargs) -> str:
-				return self.policy_mapping_manager.get_policy_mapping(
-					agent_id, policy_mapping_fn_tmp(agent_id, episode, **kwargs), episode)
+			# Single agent configuration
+			self.train_config["observation_space"], self.train_config["action_space"] = tmp_env.get_spaces()
 
-			self.train_config["multiagent"]["policy_mapping_fn"] = policy_mapping_fn
-			self.train_config["multiagent"]["policies"] = { 
-				subpolicy_name: (None, obs_space, act_space, {}) 
-					for policy_name, (obs_space, act_space) in tmp_env.get_spaces().items() 
-						for subpolicy_name in self.policy_mapping_manager.get_policy_mapping_list(policy_name) 
-			}
-
-		# Initialize trainer
-		self.trainer = trainer_class(config=self.train_config)
-
-		print_network_architecture(self.trainer, self.train_config["multiagent"]["policies"].keys())
+			# Initialize trainer
+			self.trainer = trainer_class(config=self.train_config)
+			print_network_architecture(self.trainer, [DEFAULT_POLICY_ID])
 
 
 	def train(self, 
@@ -124,13 +134,21 @@ class KODOKUTrainer:
 			print(pretty_print(result))
 
 			# write log to tensorboard
-			for policy in result["policy_reward_mean"]:
-				if policy in result["info"]["learner"]:
-					for k, v in result["info"]["learner"][policy]["learner_stats"].items():
-						if np.isscalar(v):
-							self.summaryWriter.add_scalar(k + '_' + policy, v, epoch)
+			if len(result["policy_reward_mean"]) > 0:
+				for policy in result["policy_reward_mean"]:
+					if policy in result["info"]["learner"]:
+						for k, v in result["info"]["learner"][policy]["learner_stats"].items():
+							if np.isscalar(v):
+								self.summaryWriter.add_scalar(k + '_' + policy, v, epoch)
+					for k in ['mean', 'min', 'max']:
+						self.summaryWriter.add_scalar('EpRet_' + policy + '_' + k, result['policy_reward_' + k][policy], epoch)
+
+			else:
+				for k, v in result["info"]["learner"][DEFAULT_POLICY_ID]["learner_stats"].items():
+					if np.isscalar(v):
+						self.summaryWriter.add_scalar(k, v, epoch)
 				for k in ['mean', 'min', 'max']:
-					self.summaryWriter.add_scalar('EpRet_' + policy + '_' + k, result['policy_reward_' + k][policy], epoch)
+					self.summaryWriter.add_scalar('EpRet_' + k, result['episode_reward_' + k], epoch)
 
 
 	def evaluate(self) -> ResultDict:
@@ -238,3 +256,50 @@ class KODOKUTrainer:
 		    path (str): Load dir path
 		"""
 		self.trainer.__setstate__(pickle.load(open(path, "rb")))
+
+
+
+class SingleAgentTrainer(KODOKUTrainer):
+	def __init__(self, 
+		log_dir : str, 
+		env_class : Type[EnvWrapper],
+		train_config : Dict,
+		env_config_fn : Callable[[], Tuple[str, Dict]],
+		ray_config : Dict = {}):
+		""" Trainer ctor
+		
+		Args:
+		    log_dir (str): Location to store training summary, trajectory, weight, etc..
+		    env_class (Type[EnvWrapper]): Environment class
+		    train_config (Dict): Training config
+		    env_config_fn (Callable[[], Tuple[str, Dict]]): Functor to set config on env
+		    ray_config (Dict, optional): ray configuration for init (memory, num gpu, etc..)
+		"""
+		super().__init__(log_dir, env_class, train_config, env_config_fn, None, ray_config)
+
+
+	def get_policy(self, policy_id : str = DEFAULT_POLICY_ID) -> Policy:
+		""" Get policy instance by id
+		
+		Args:
+		    policy_id (str): Policy id
+		"""
+		return super().get_policy(policy_id)
+	
+
+	def save_policy(self, path : str) -> None:
+		""" Save indivisual or whole policy into file
+		
+		Args:
+		    path (str): Save file path
+		"""
+		super().save_policy(path, DEFAULT_POLICY_ID)
+
+
+	def load_policy(self, path : str) -> None:
+		""" Load indivisual or whole policy from file
+		
+		Args:
+		    path (str): Load file path
+		"""
+		super().load_policy(path, DEFAULT_POLICY_ID)

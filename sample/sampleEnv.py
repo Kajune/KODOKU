@@ -8,7 +8,7 @@ from ray.rllib.evaluation.episode import Episode
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from kodoku.env import EnvWrapper
+from kodoku.env import MultiEnvWrapper
 
 
 class SimpleBattlefieldUnit:
@@ -168,7 +168,7 @@ class SimpleBattlefieldSimulator_Defensive(SimpleBattlefieldSimulator):
 
 
 
-class SimpleBattlefieldEnv_Sym(EnvWrapper):
+class SimpleBattlefieldEnv_Sym(MultiEnvWrapper):
 	def __init__(self, config : EnvContext):
 		super().__init__(config)
 		self.viewer = None
@@ -207,6 +207,10 @@ class SimpleBattlefieldEnv_Sym(EnvWrapper):
 			return "common"
 
 		return policy_mapping_fn
+
+
+	def reset_impl(self) -> Dict[str, Any]:
+		return self.get_obs()
 
 
 	def get_obs(self) -> Dict[str, Any]:
@@ -287,11 +291,13 @@ class SimpleBattlefieldEnv_Sym(EnvWrapper):
 
 			img = np.ones((height, width, 3), np.uint8) * 255
 			for unit in self.env.atk_units:
-				img = cv2.circle(img, (int(unit.pos[0] * img_scale), int(unit.pos[1] * img_scale)), 
-					int(unit.range * img_scale), (int(255 * unit.hp / unit.max_hp),0,0), 1)
+				if unit.hp > 0:
+					img = cv2.circle(img, (int(unit.pos[0] * img_scale), int(unit.pos[1] * img_scale)), 
+						int(unit.range * img_scale), (int(255 * unit.hp / unit.max_hp),0,0), 1)
 			for unit in self.env.def_units:
-				img = cv2.circle(img, (int(unit.pos[0] * img_scale), int(unit.pos[1] * img_scale)), 
-					int(unit.range * img_scale), (0,0,int(255 * unit.hp / unit.max_hp)), 1)
+				if unit.hp > 0:
+					img = cv2.circle(img, (int(unit.pos[0] * img_scale), int(unit.pos[1] * img_scale)), 
+						int(unit.range * img_scale), (0,0,int(255 * unit.hp / unit.max_hp)), 1)
 
 			cv2.imshow('', img)
 			cv2.waitKey(1)
