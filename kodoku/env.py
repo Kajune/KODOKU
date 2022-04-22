@@ -108,7 +108,10 @@ class GymEnv(EnvWrapper):
 
 
 	def initialize_env(self, config : Dict) -> Any:
-		env = gym.make(**config)
+		if self.env is None:
+			env = gym.make(**config)
+		else:
+			env = self.env
 		self.observation_space = env.observation_space
 		self.action_space = env.action_space
 		self.reward_range = env.reward_range

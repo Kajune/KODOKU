@@ -14,11 +14,6 @@ def config_fn():
 	return 'default', {'id': 'CartPole-v0'}
 
 
-def callback(trainer : SingleAgentTrainer, epoch : int, result : Dict):
-	log = trainer.log()
-	json.dump(log, open('./log_dir/latest_log.json', 'w'), indent=2)
-
-
 if __name__ == '__main__':
 	trainer = SingleAgentTrainer(
 		log_dir='./log_dir', 
@@ -27,6 +22,6 @@ if __name__ == '__main__':
 		train_config=json.load(open('train_config.json')),
 	)
 
-	trainer.train(10, epoch_callback=callback)
+	trainer.train(10)
 	trainer.evaluate()
 

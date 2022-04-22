@@ -55,8 +55,10 @@ class KODOKUTrainer:
 		if self.train_config["lr_schedule"] is None:
 			self.train_config["lr_schedule"] = [[0,self.train_config["lr"]],[1,self.train_config["lr"]]]
 
-		if self.train_config["model"] == "default":
-			self.train_config["model"] = MODEL_DEFAULTS
+		self.train_config["model"] = MODEL_DEFAULTS
+		if train_config["training"]["model"] != "default":
+			for k, v in train_config["training"]["model"].items():
+				self.train_config["model"][k] = v
 
 		self.train_config["callbacks"] = LogCallbacks
 
@@ -139,9 +141,9 @@ class KODOKUTrainer:
 					if policy in result["info"]["learner"]:
 						for k, v in result["info"]["learner"][policy]["learner_stats"].items():
 							if np.isscalar(v):
-								self.summaryWriter.add_scalar(k + '_' + policy, v, epoch)
+								self.summaryWriter.add_scalar(k + '/' + policy, v, epoch)
 					for k in ['mean', 'min', 'max']:
-						self.summaryWriter.add_scalar('EpRet_' + policy + '_' + k, result['policy_reward_' + k][policy], epoch)
+						self.summaryWriter.add_scalar('EpRet_' + k + '/' + policy, result['policy_reward_' + k][policy], epoch)
 
 			else:
 				for k, v in result["info"]["learner"][DEFAULT_POLICY_ID]["learner_stats"].items():
